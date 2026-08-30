@@ -1,13 +1,11 @@
 from dotenv import load_dotenv
 load_dotenv()
-import json
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
-from routes.detection import router as detection_router, detection_service
-from routes.threats import router as threats_router, threat_store
+from routes.detection import router as detection_router
+from routes.threats import router as threats_router
 from services.websocket_manager import ws_manager
-from schemas.threat import LogEvent
 
 app = FastAPI(title="Threat Intelligence Dashboard API")
 
@@ -27,12 +25,7 @@ async def websocket_endpoint(websocket: WebSocket):
     await ws_manager.connect(websocket)
     try:
         while True:
-            data = await websocket.receive_text()
-            log_data = json.loads(data)
-            log_event = LogEvent(**log_data)
-            result = detection_service.process_event(log_event)
-            threat_store.append(result)
-            await ws_manager.broadcast(result.model_dump_json())
+            await websocket.receive_text()
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket)
 
